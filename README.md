@@ -1,218 +1,94 @@
-# ChoiceUltra
+# CloakVote
 
-**A Privacy-First Blockchain Application**
+Executive Summary
+CloakVote is an anonymous voting system that runs private ballot casting and tallying directly on-chain using Zama FHEVM. Ballots remain encrypted throughout the election lifecycle; only final tallies are revealed with public verifiability. Fully Homomorphic Encryption (FHE) ensures the chain can compute over ciphertexts without seeing voter choices.
 
-ChoiceUltra is a cutting-edge decentralized application that prioritizes user privacy and data security. Built on Ethereum and powered by Fully Homomorphic Encryption (FHE), it provides a secure platform for managing sensitive data while maintaining complete user control and privacy.
+—
 
-## 🔒 What Makes ChoiceUltra Unique?
+Design Goals vs Constraints
+- Goals
+  - Anonymous ballots with on‑chain verifiable tally
+  - Simple integration for DAOs and governance tools
+  - Clear operational procedures (keys, tally, reveal)
+  - Minimal trusted surface; rely on Zama FHEVM for secure computation
+- Constraints
+  - FHE computations have higher gas/runtime footprint
+  - Complex voting rules may require off‑chain encoding pipelines
+  - Mempool metadata may leak timing/participation (mitigate with relays)
 
-### **End-to-End Privacy**
-Unlike traditional applications that store data in plaintext, ChoiceUltra encrypts all user data using Fully Homomorphic Encryption, ensuring that even the platform operators cannot access your private information.
+—
 
-### **Decentralized Architecture**
-Built on blockchain technology, ChoiceUltra operates without central points of failure, giving users complete control over their data and eliminating single points of control.
+High‑Level Flow
+1) Setup
+   - Create election; publish election parameters and FHE public key
+2) Cast
+   - Voter encrypts selection client‑side (FHE) and submits ciphertext
+3) Close & Tally (Zama FHEVM)
+   - Contract aggregates encrypted ballots; produces encrypted tally + proofs
+4) Reveal
+   - Authorized tally authority reveals final numbers; anyone verifies proofs
 
-### **Zero-Knowledge Operations**
-All operations are performed on encrypted data without ever decrypting it, ensuring maximum privacy while maintaining full functionality.
+ASCII outline
+```
+Voter → FHE Encrypt → Cipher Ballot → FHEVM Aggregate → Encrypted Tally → Verified Reveal
+```
 
-### **User Sovereignty**
-You own your data, you control your data, and you decide who can access it. No backdoors, no master keys, no compromises.
+—
 
-## 🚀 Core Features
+User Stories
+- As a DAO admin, I want to spin up a private vote that members can verify
+- As a voter, I want my choice to remain secret even from validators and hosts
+- As an auditor, I want to independently verify the tally without seeing votes
+- As an integrator, I want a clean API to create, close, tally, and reveal
 
-- **🔒 End-to-End Encryption**: Your data is encrypted before leaving your device
-- **🌐 Blockchain Storage**: Decentralized storage ensures data integrity
-- **🔑 Wallet Integration**: Use your existing Web3 wallet for authentication
-- **⚡ Real-Time Operations**: Instant access to your encrypted data
-- **🛡️ Zero-Knowledge Architecture**: Even we can't see your encrypted information
-- **📱 Modern Interface**: Clean, intuitive design built with React
-- **🔧 Developer Friendly**: Open source with comprehensive documentation
+—
 
-## 🏗️ Technical Architecture
+Deployment Matrix
+```
+| Env     | Chain          | Keys                   | Submission           | Tally Engine     |
+|---------|-----------------|------------------------|----------------------|------------------|
+| Dev     | Hardhat local   | Dev FHE keys           | Direct               | Local FHEVM node |
+| Test    | Sepolia         | Rotating per‑election  | Optional relayer     | Zama FHEVM       |
+| Prod    | Mainnet/L2      | Threshold authority    | Relayer / stealth tx | Zama FHEVM       |
+```
 
-### **Smart Contract Layer**
-- **ChoiceUltra.sol**: Main application contract
-- **EncryptionManager.sol**: Handles cryptographic operations
-- **StorageManager.sol**: Manages encrypted data storage
-- **AccessControl.sol**: Implements permission systems
+—
 
-### **Frontend Application**
-- **React + TypeScript**: Modern, type-safe development
-- **Web3 Integration**: Seamless wallet connectivity
-- **Responsive Design**: Works on all devices
-- **Real-time Updates**: Live data synchronization
+Compliance Notes
+- Cryptography: uses FHE (Zama FHEVM) for homomorphic aggregation; no ballot plaintexts stored on-chain
+- Data protection: minimizes metadata; recommend relayers to reduce correlation
+- Governance records: retains public proofs and election parameters for audit trails
 
-### **Cryptographic Stack**
-- **FHEVM**: Zama's Fully Homomorphic Encryption
-- **ChaCha20**: Fast, secure symmetric encryption
-- **EIP-712**: Secure message signing
-- **Keccak256**: Cryptographic hashing
+—
 
-## 🎯 Use Cases
+Troubleshooting
+- Symptom: High gas during tally
+  - Cause: Large ballot set + FHE ops
+  - Fix: Batch tally, shard elections, or increase off‑chain preprocessing
+- Symptom: Ballot submission linkability
+  - Cause: Direct wallet submissions
+  - Fix: Use relayers/mixers; randomize submission windows
+- Symptom: Inconsistent reveal
+  - Cause: Wrong key/proof set
+  - Fix: Recompute proofs; rotate keys; re‑publish artifacts
 
-### **Personal Data Management**
-- Secure document storage
-- Private note-taking
-- Personal information vault
-- Encrypted file sharing
+—
 
-### **Business Applications**
-- Confidential data storage
-- Secure communication
-- Compliance management
-- Audit trail maintenance
+API Sketch (subject to change)
+- createElection(params, fhePubKey)
+- cast(bytes ciphertext)
+- closeElection()
+- tally()
+- reveal(bytes result, bytes proofs)
+- artifacts() → bytes
 
-### **Developer Tools**
-- Encrypted configuration storage
-- Secure API key management
-- Private code repositories
-- Development environment secrets
+—
 
-## 🛠️ Getting Started
+Changelog
+- 0.1.0: Initial draft with Zama FHEVM tally, cast/close/reveal flows
 
-### **Prerequisites**
-- MetaMask or compatible Web3 wallet
-- Ethereum Sepolia testnet ETH
-- Modern web browser with Web3 support
+—
 
-### **Installation**
-
-1. **Clone the repository**
-   ```bash
-   git clone https://github.com/imnotaboon/ChoiceUltra.git
-   cd choiceultra
-   ```
-
-2. **Install dependencies**
-   ```bash
-   npm install
-   ```
-
-3. **Configure environment**
-   ```bash
-   cp .env.example .env.local
-   # Add your configuration settings
-   ```
-
-4. **Deploy contracts**
-   ```bash
-   npm run deploy:sepolia
-   ```
-
-5. **Start the application**
-   ```bash
-   cd app
-   npm run dev
-   ```
-
-### **How to Use**
-
-1. **Connect your wallet** to the platform
-2. **Set up your profile** and security settings
-3. **Start storing data** securely on the blockchain
-4. **Manage permissions** for data access
-5. **Share securely** with trusted parties
-6. **Monitor activity** through the dashboard
-
-## 🔒 Security & Privacy
-
-### **Encryption at Rest**
-- All data encrypted before storage
-- Multiple encryption layers
-- Zero-knowledge architecture
-- Tamper-proof storage
-
-### **Encryption in Transit**
-- HTTPS for all communications
-- Wallet signatures prevent replay attacks
-- Time-limited access tokens
-- Secure key exchange protocols
-
-### **Access Control**
-- Only you can decrypt your data
-- No backdoors or master keys
-- Complete user sovereignty
-- Transparent permission system
-
-## 🌟 Roadmap
-
-### **Phase 1: Core Platform** ✅
-- Basic encryption and storage
-- Wallet integration
-- Web interface
-- FHE implementation
-
-### **Phase 2: Enhanced Security** 🚧
-- Multi-signature support
-- Hardware wallet integration
-- Advanced access controls
-- Security audit
-
-### **Phase 3: Advanced Features** 📋
-- File encryption support
-- Sharing capabilities
-- Mobile applications
-- API development
-
-### **Phase 4: Enterprise Solutions** 🔮
-- Team collaboration features
-- Compliance tools
-- Enterprise integrations
-- Professional support
-
-## 🤝 Contributing
-
-We welcome contributions from developers, security researchers, and privacy advocates!
-
-### **How to Contribute**
-- Fork the repository
-- Create a feature branch
-- Implement your changes
-- Submit a pull request
-
-### **Areas We Need Help**
-- 🔐 Security audits and reviews
-- 🎨 UI/UX improvements
-- 📚 Documentation and tutorials
-- 🧪 Testing and quality assurance
-- 🌍 Internationalization
-
-## 📊 Project Statistics
-
-- **Smart Contract Size**: ~3.5 KB (optimized)
-- **Frontend Bundle**: ~350 KB (gzipped)
-- **Gas Cost per Operation**: ~120,000 gas
-- **Test Coverage**: 90%+ (target: 95%)
-- **Languages**: TypeScript, Solidity, CSS
-
-## 📝 License
-
-This project is licensed under the **MIT License**. See the [LICENSE](LICENSE) file for details.
-
-## 🙏 Acknowledgments
-
-Special thanks to:
-- **Zama** for pioneering FHEVM technology
-- **Ethereum Foundation** for decentralized infrastructure
-- **Privacy advocates** for pushing boundaries
-- **The Web3 community** for innovation
-
-## 📞 Support & Community
-
-- **GitHub Issues**: [Report bugs or request features](https://github.com/imnotaboon/ChoiceUltra/issues)
-- **Documentation**: [Full documentation](https://github.com/imnotaboon/ChoiceUltra/wiki)
-- **Discord**: [Join our community](https://github.com/imnotaboon/ChoiceUltra/discussions)
-- **Twitter**: [Follow for updates](https://github.com/imnotaboon/ChoiceUltra)
-
-## 🔗 Links
-
-- **Repository**: [https://github.com/imnotaboon/ChoiceUltra](https://github.com/imnotaboon/ChoiceUltra)
-- **Live Demo**: [Try it now](https://github.com/imnotaboon/ChoiceUltra)
-- **Documentation**: [User Guide](https://github.com/imnotaboon/ChoiceUltra/wiki)
-- **API Docs**: [Developer Resources](https://github.com/imnotaboon/ChoiceUltra/api)
-
----
-
-**Built with ❤️ for Privacy**
-
-*ChoiceUltra - Where your data stays yours, forever.*
+Credits & License
+Built on Zama FHEVM and open cryptographic primitives.
+MIT — see LICENSE.
